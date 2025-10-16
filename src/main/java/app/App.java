@@ -88,7 +88,6 @@ public class App {
         @return o horário sugerido, ou null caso não o encontre
      */
     public LocalDateTime procura_horario(LocalDateTime inicio, LocalDateTime fim, int duracao) {
-        LocalDateTime agora = LocalDateTime.now();
-        return agora;
+        return null;
     }
 }
