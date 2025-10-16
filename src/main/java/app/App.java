@@ -1,10 +1,7 @@
 package app;
 
 import esd.ListaSequencial;
-import org.springframework.cglib.core.Local;
-import org.springframework.stereotype.Service;
 
-import java.io.*;
 import java.security.InvalidParameterException;
 import java.time.LocalDateTime;
 
@@ -55,7 +52,10 @@ public class App {
     @throws InvalidParameterException caso não exista
      */
     public Evento obtem_evento(int id) {
-        throw new InvalidParameterException("inexistente");
+        LocalDateTime agora = LocalDateTime.now();
+        Evento e = new Evento(1, agora, 30, "teste", "blabvla ...");
+        return e;
+//        throw new InvalidParameterException("inexistente");
     }
 
     /*
