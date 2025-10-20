@@ -32,7 +32,8 @@ public class App {
     @return uma lista contendo os eventos
      */
     public ListaSequencial<Evento> eventos() {
-        return null;
+        ListaSequencial<Evento> r = new ListaSequencial<>();
+        return r;
     }
 
 
@@ -43,7 +44,7 @@ public class App {
     @throws        Dispara uma exceção InvalidParameterException se evento não puder ser adicionado
      */
     public int adiciona_evento(Evento evento) {
-        return -1;
+        return 1;
     }
 
     /*
@@ -53,7 +54,7 @@ public class App {
      */
     public Evento obtem_evento(int id) {
         LocalDateTime agora = LocalDateTime.now();
-        Evento e = new Evento(1, agora, 30, "teste", "blabvla ...");
+        Evento e = new Evento(id, agora, 30, "teste", "blabvla ...");
         return e;
 //        throw new InvalidParameterException("inexistente");
     }

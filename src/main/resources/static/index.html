@@ -2,126 +2,282 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Agenda Simples</title>
+    <title>Agenda Semanal com Edição, Exclusão via Popup e Sugestão</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; }
-        input, textarea, button { margin: 4px 0; width: 100%; padding: 6px; }
-        textarea { height: 100px; }
+        body { font-family: sans-serif; max-width: 1200px; margin: 20px auto; }
+        input, textarea, button { margin: 4px 0; padding: 6px; width: 100%; box-sizing: border-box; }
+        textarea { height: 80px; }
         .section { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; border-radius: 6px; }
         pre { background: #f7f7f7; padding: 10px; border-radius: 6px; white-space: pre-wrap; }
+
+        #calendar {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .day-header {
+            text-align: center;
+            background: #f0f0f0;
+            padding: 6px;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+        .hour-cell {
+            border-top: 1px solid #eee;
+            border-right: 1px solid #eee;
+            height: 60px;
+            position: relative;
+        }
+        .hour-label {
+            border-top: 1px solid #eee;
+            text-align: right;
+            padding-right: 4px;
+            height: 60px;
+            font-size: 12px;
+            color: #666;
+        }
+        .event {
+            position: absolute;
+            left: 5%;
+            width: 90%;
+            border-radius: 6px;
+            padding: 2px 4px;
+            font-size: 12px;
+            color: white;
+            background: #3f51b5;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        /* Popup */
+        #popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #popup {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 320px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        #popup h3 { margin-top: 0; }
+        #popup .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        #popup button {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        #btnSalvar { background: #3f51b5; color: white; }
+        #btnSalvar:hover { background: #2c3a9b; }
+        #btnExcluir { background: #e53935; color: white; }
+        #btnExcluir:hover { background: #c62828; }
+        #btnFechar { background: #9e9e9e; color: white; }
+        #btnFechar:hover { background: #757575; }
     </style>
 </head>
 <body>
-<h1>Agenda Simples</h1>
+<h1>Agenda Semanal</h1>
 
-<!-- Listar eventos -->
 <div class="section">
-    <h2>Listar eventos</h2>
-    <label>Início (ISO opcional): <input type="datetime-local" id="inicioLista"></label>
-    <label>Fim (ISO opcional): <input type="datetime-local" id="fimLista"></label>
-    <button onclick="listarEventos()">Listar</button>
+    <button onclick="carregarSemana()">Carregar semana atual</button>
 </div>
 
-<!-- Obter evento -->
-<div class="section">
-    <h2>Obter evento por ID</h2>
-    <input type="number" id="idGet" placeholder="ID do evento">
-    <button onclick="obterEvento()">Obter</button>
-</div>
+<div id="calendar"></div>
 
-<!-- Criar evento -->
+<h2>Gerenciamento</h2>
 <div class="section">
-    <h2>Criar evento</h2>
+    <h3>Criar evento</h3>
     <input type="text" id="nomePost" placeholder="Nome">
     <textarea id="descPost" placeholder="Descrição"></textarea>
     <input type="datetime-local" id="inicioPost">
-    <input type="number" id="duracaoPost" placeholder="Duração (minutos)">
+    <input type="number" id="duracaoPost" placeholder="Duração (min)">
     <button onclick="criarEvento()">Criar</button>
 </div>
 
-<!-- Atualizar evento -->
 <div class="section">
-    <h2>Atualizar evento</h2>
-    <input type="number" id="idPut" placeholder="ID do evento">
-    <input type="text" id="nomePut" placeholder="Novo nome">
-    <textarea id="descPut" placeholder="Nova descrição"></textarea>
-    <input type="datetime-local" id="inicioPut">
-    <input type="number" id="duracaoPut" placeholder="Nova duração (minutos)">
-    <button onclick="atualizarEvento()">Atualizar</button>
+    <h3>Sugerir data e horário livre</h3>
+    <label>Início do período:</label>
+    <input type="datetime-local" id="inicioSugestao">
+    <label>Fim do período:</label>
+    <input type="datetime-local" id="fimSugestao">
+    <label>Duração (min):</label>
+    <input type="number" id="duracaoSugestao" placeholder="Duração do evento">
+    <button onclick="pedirSugestao()">Pedir sugestão</button>
 </div>
 
-<!-- Excluir evento -->
-<div class="section">
-    <h2>Excluir evento</h2>
-    <input type="number" id="idDelete" placeholder="ID do evento">
-    <button onclick="excluirEvento()">Excluir</button>
-</div>
-
-<!-- Sugestão -->
-<div class="section">
-    <h2>Sugestão de horário</h2>
-    <input type="datetime-local" id="inicioSug">
-    <input type="datetime-local" id="fimSug">
-    <input type="number" id="duracaoSug" placeholder="Duração (minutos)">
-    <button onclick="sugerirHorario()">Sugerir</button>
-</div>
-
-<h2>Resultado:</h2>
+<h2>Resultado</h2>
 <pre id="saida"></pre>
+
+<!-- Popup -->
+<div id="popup-overlay" onclick="fecharPopup(event)">
+    <div id="popup" onclick="event.stopPropagation()">
+        <h3>Detalhes do Evento</h3>
+        <form id="popup-form">
+            <label>ID:</label>
+            <input type="text" id="popup-id" readonly>
+            <label>Nome:</label>
+            <input type="text" id="popup-nome">
+            <label>Descrição:</label>
+            <textarea id="popup-desc"></textarea>
+            <label>Início:</label>
+            <input type="datetime-local" id="popup-inicio">
+            <label>Duração (min):</label>
+            <input type="number" id="popup-duracao">
+        </form>
+        <div class="buttons">
+            <button id="btnSalvar" onclick="salvarAlteracoes()">Salvar</button>
+            <button id="btnExcluir" onclick="excluirDoPopup()">Excluir</button>
+            <button id="btnFechar" onclick="fecharPopup()">Fechar</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const baseUrl = '/agenda/eventos';
+    const sugestaoUrl = '/agendaevento/sugestao';
+    const calendarEl = document.getElementById('calendar');
+    const popupOverlay = document.getElementById('popup-overlay');
+    let eventoAtual = null;
 
-    async function listarEventos() {
-        const ini = document.getElementById('inicioLista').value;
-        const fim = document.getElementById('fimLista').value;
-        let url = baseUrl;
-        const params = [];
-        if (ini) params.push(`inicio=${new Date(ini).toISOString()}`);
-        if (fim) params.push(`fim=${new Date(fim).toISOString()}`);
-        if (params.length) url += '?' + params.join('&');
-        mostrar(await fetchJson(url));
+    async function carregarSemana() {
+        const hoje = new Date();
+        const inicioSemana = new Date(hoje);
+        inicioSemana.setDate(hoje.getDate() - (hoje.getDay() || 7) + 1);
+        inicioSemana.setHours(0,0,0,0);
+        const fimSemana = new Date(inicioSemana);
+        fimSemana.setDate(inicioSemana.getDate() + 7);
+
+        const eventos = await fetchJson(`${baseUrl}?inicio=${inicioSemana.toISOString()}&fim=${fimSemana.toISOString()}`);
+        montarCalendario(inicioSemana, eventos);
+        mostrar(eventos);
     }
 
-    async function obterEvento() {
-        const id = document.getElementById('idGet').value;
-        if (!id) return alert('Informe o ID');
-        mostrar(await fetchJson(`${baseUrl}/${id}`));
+    function montarCalendario(inicioSemana, eventos) {
+        const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        const horas = Array.from({length: 24}, (_, i) => i);
+        calendarEl.innerHTML = '';
+        calendarEl.style.gridTemplateRows = `30px repeat(${horas.length}, 60px)`;
+        calendarEl.appendChild(document.createElement('div'));
+        for (let d = 0; d < 7; d++) {
+            const head = document.createElement('div');
+            const dia = new Date(inicioSemana);
+            dia.setDate(inicioSemana.getDate() + d);
+            head.textContent = `${dias[d]} ${dia.getDate()}/${dia.getMonth()+1}`;
+            head.className = 'day-header';
+            calendarEl.appendChild(head);
+        }
+        for (let h of horas) {
+            const label = document.createElement('div');
+            label.className = 'hour-label';
+            label.textContent = `${String(h).padStart(2,'0')}:00`;
+            calendarEl.appendChild(label);
+            for (let d = 0; d < 7; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'hour-cell';
+                calendarEl.appendChild(cell);
+            }
+        }
+        eventos.forEach(ev => {
+            const inicio = new Date(ev.inicio);
+            const diaIndex = (inicio.getDay() + 6) % 7;
+            const hora = inicio.getHours() + inicio.getMinutes()/60;
+            const dur = (ev.duracao || 60) / 60;
+            const cells = calendarEl.querySelectorAll('.hour-cell');
+            const parent = cells[diaIndex + (Math.floor(hora))*7] || cells[0];
+            const eventoEl = document.createElement('div');
+            eventoEl.className = 'event';
+            eventoEl.style.top = `${(hora % 1) * 60}px`;
+            eventoEl.style.height = `${dur * 60}px`;
+            eventoEl.textContent = `${ev.nome || 'Evento'} (${ev.id})`;
+            eventoEl.addEventListener('dblclick', () => abrirPopup(ev));
+            parent.appendChild(eventoEl);
+        });
+    }
+
+    function abrirPopup(evento) {
+        eventoAtual = evento;
+        document.getElementById('popup-id').value = evento.id;
+        document.getElementById('popup-nome').value = evento.nome || '';
+        document.getElementById('popup-desc').value = evento.descricao || '';
+        document.getElementById('popup-inicio').value = new Date(evento.inicio).toISOString().slice(0,16);
+        document.getElementById('popup-duracao').value = evento.duracao || 60;
+        popupOverlay.style.display = 'flex';
+    }
+
+    function fecharPopup(event) {
+        if (!event || event.target === popupOverlay) {
+            popupOverlay.style.display = 'none';
+        }
+    }
+
+    async function salvarAlteracoes() {
+        const id = eventoAtual.id;
+        const nome = document.getElementById('popup-nome').value;
+        const descricao = document.getElementById('popup-desc').value;
+        const inicio = document.getElementById('popup-inicio').value;
+        const duracao = parseInt(document.getElementById('popup-duracao').value);
+        const evento = { nome, descricao, inicio: new Date(inicio).toISOString(), duracao };
+        const resultado = await fetchJson(`${baseUrl}/${id}`, 'PUT', evento);
+        mostrar(resultado);
+        fecharPopup();
+        carregarSemana();
+    }
+
+    async function excluirDoPopup() {
+        if (!confirm('Deseja realmente excluir este evento?')) return;
+        const id = eventoAtual.id;
+        const resultado = await fetchJson(`${baseUrl}/${id}`, 'DELETE');
+        mostrar(resultado);
+        fecharPopup();
+        carregarSemana();
     }
 
     async function criarEvento() {
         const nome = document.getElementById('nomePost').value;
-        const desc = document.getElementById('descPost').value;
+        const descricao = document.getElementById('descPost').value;
         const inicio = document.getElementById('inicioPost').value;
         const duracao = parseInt(document.getElementById('duracaoPost').value);
-        const evento = { nome, descricao: desc, inicio: new Date(inicio).toISOString(), duracao };
+        const evento = { nome, descricao, inicio: new Date(inicio).toISOString(), duracao };
         mostrar(await fetchJson(baseUrl, 'POST', evento));
+        carregarSemana();
     }
 
-    async function atualizarEvento() {
-        const id = document.getElementById('idPut').value;
-        if (!id) return alert('Informe o ID');
-        const evento = {
-            nome: document.getElementById('nomePut').value,
-            descricao: document.getElementById('descPut').value,
-            inicio: new Date(document.getElementById('inicioPut').value).toISOString(),
-            duracao: parseInt(document.getElementById('duracaoPut').value)
-        };
-        mostrar(await fetchJson(`${baseUrl}/${id}`, 'PUT', evento));
-    }
-
-    async function excluirEvento() {
-        const id = document.getElementById('idDelete').value;
-        if (!id) return alert('Informe o ID');
-        mostrar(await fetchJson(`${baseUrl}/${id}`, 'DELETE'));
-    }
-
-    async function sugerirHorario() {
-        const ini = new Date(document.getElementById('inicioSug').value).toISOString();
-        const fim = new Date(document.getElementById('fimSug').value).toISOString();
-        const dur = parseInt(document.getElementById('duracaoSug').value);
-        const url = `${baseUrl}/sugestao?inicio=${ini}&fim=${fim}&duracao=${dur}`;
-        mostrar(await fetchText(url));
+    async function pedirSugestao() {
+        const inicio = document.getElementById('inicioSugestao').value;
+        const fim = document.getElementById('fimSugestao').value;
+        const duracao = parseInt(document.getElementById('duracaoSugestao').value);
+        if (!inicio || !fim || !duracao) return alert('Preencha todos os campos!');
+        try {
+            const url = `${sugestaoUrl}?inicio=${new Date(inicio).toISOString()}&fim=${new Date(fim).toISOString()}&duracao=${duracao}`;
+            const resposta = await fetch(url);
+            if (resposta.status === 404) {
+                mostrar("Nenhum horário disponível nesse intervalo.");
+            } else if (!resposta.ok) {
+                mostrar(`Erro: ${resposta.status}`);
+            } else {
+                const data = await resposta.json();
+                mostrar(data);
+            }
+        } catch (e) {
+            mostrar(`Erro de conexão: ${e}`);
+        }
     }
 
     async function fetchJson(url, method = 'GET', body = null) {
@@ -131,15 +287,12 @@
         return resp.ok ? resp.json() : { erro: resp.status, detalhe: await resp.text() };
     }
 
-    async function fetchText(url) {
-        const resp = await fetch(url);
-        return resp.ok ? resp.text() : `${resp.status}: ${await resp.text()}`;
-    }
-
     function mostrar(data) {
         document.getElementById('saida').textContent =
             typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     }
+
+    carregarSemana();
 </script>
 </body>
 </html>

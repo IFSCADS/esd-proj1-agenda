@@ -15,26 +15,27 @@ import java.util.List;
 import app.App;
 
 @RestController
-@RequestMapping("/agenda/eventos")
+@RequestMapping("agenda/eventos")
 public class EsdController {
 
     private App app = new App();
+    record EventoId(int id) {}
 
-    @PostMapping("/")
-    ResponseEntity<Integer> novo_evento(@RequestBody Evento evento) {
-        ResponseEntity<Integer> result;
+    @PostMapping
+    ResponseEntity<EventoId> novo_evento(@RequestBody Evento evento) {
+        ResponseEntity<EventoId> result;
 
         try {
             int id = app.adiciona_evento(evento);
-            result = new ResponseEntity<>(id, HttpStatus.OK);
+            result = new ResponseEntity<>(new EventoId(id), HttpStatus.OK);
         } catch (Exception e) {
-            result = new ResponseEntity<>(-1, HttpStatus.BAD_REQUEST);
+            result = new ResponseEntity<>(new EventoId(-1), HttpStatus.BAD_REQUEST);
         }
 
         return result;
     }
 
-    @GetMapping("/")
+    @GetMapping
     List<Evento> todos_eventos(@RequestParam(name="inicio", required=false)
                                @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
                                @RequestParam(name="fim", required=false)
@@ -54,7 +55,7 @@ public class EsdController {
         return result;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     ResponseEntity<Evento> obtem_evento(@PathVariable int id) {
         ResponseEntity<Evento> r;
 
@@ -66,12 +67,13 @@ public class EsdController {
         return r;
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     void edita_evento(@PathVariable int id, @RequestBody Evento evento) {
+
         app.edita_evento(evento);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     ResponseEntity<Evento> remove_evento(@PathVariable int id) {
         ResponseEntity<Evento> r;
 
@@ -83,19 +85,22 @@ public class EsdController {
         return r;
     }
 
+    record Horario(String data_horario) {
+
+    }
     @GetMapping("/sugestao")
-    ResponseEntity<String> procura_horario(@RequestParam(name="inicio")
+    ResponseEntity<Horario> procura_horario(@RequestParam(name="inicio")
                                            @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
                                            @RequestParam(name="fim")
                                            @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim,
                                            @RequestParam int duracao) {
-        ResponseEntity<String> result;
+        ResponseEntity<Horario> result;
 
         LocalDateTime data_horario = app.procura_horario(inicio, fim, duracao);
         if (data_horario == null) {
             result = new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
-            result = new ResponseEntity<>(data_horario.toString(), HttpStatus.OK);
+            result = new ResponseEntity<>(new Horario(data_horario.toString()), HttpStatus.OK);
         }
 
         return result;
